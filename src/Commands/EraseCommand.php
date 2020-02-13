@@ -1,10 +1,10 @@
 <?php
 
-namespace Blueprint;
+namespace Blueprint\Commands;
 
-use Illuminate\Support\Str;
+use Blueprint\Blueprint;
 use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Symfony\Component\Console\Input\InputArgument;
 
 class EraseCommand extends Command
