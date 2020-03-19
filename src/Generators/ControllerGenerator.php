@@ -15,6 +15,7 @@ use Blueprint\Models\Statements\SendStatement;
 use Blueprint\Models\Statements\SessionStatement;
 use Blueprint\Models\Statements\ValidateStatement;
 use Blueprint\Models\Statements\AuthorizeStatement;
+use Blueprint\Models\Statements\ResourceStatement;
 use Illuminate\Support\Str;
 
 class ControllerGenerator implements Generator
@@ -85,6 +86,12 @@ class ControllerGenerator implements Generator
                 $this->addImport($controller, $reference);
             }
 
+            if ($controller->isAPI()) {
+                $search = '     * @return \\Illuminate\\Http\\Response';
+                $replace = '     * @return \\Illuminate\\Http\\JsonResponse';
+                $method = str_replace($search, $replace, $method);
+            }
+
             $body = '';
             foreach ($statements as $statement) {
                 if ($statement instanceof SendStatement) {
@@ -111,6 +118,23 @@ class ControllerGenerator implements Generator
                 } elseif ($statement instanceof RenderStatement) {
                     $body .= self::INDENT . $statement->output() . PHP_EOL;
                 } elseif ($statement instanceof RedirectStatement) {
+                    $body .= self::INDENT . $statement->output() . PHP_EOL;
+                } elseif ($statement instanceof ResourceStatement) {
+                    $class_name = Str::singular($controller->prefix()) . 'Resource';
+                    $fqcn = config('blueprint.namespace') . '\\Http\\Resources\\' . ($controller->namespace() ? $controller->namespace() . '\\' : '') . $class_name;
+
+                    $replace = '     * @return ' . $class_name . '|\\Illuminate\\Http\\JsonResponse';
+                    if ($statement->isCollection()) {
+                        $replace .= '|\\Illuminate\\Http\\Resources\\Json\\AnonymousResourceCollection';
+                    }
+                    $search = '     * @return \\Illuminate\\Http\\Response';
+                    $method = str_replace($search, $replace, $method);
+
+                    $search = '     * @return \\Illuminate\\Http\\JsonResponse';
+                    $method = str_replace($search, $replace, $method);
+
+                    $this->addImport($controller, $fqcn);
+
                     $body .= self::INDENT . $statement->output() . PHP_EOL;
                 } elseif ($statement instanceof AuthorizeStatement) {
                     $body .= self::INDENT . $statement->output($name) . PHP_EOL;

@@ -57,7 +57,14 @@ class QueryStatement
             } else {
                 return '$' . Str::lower($this->clauses()[0]) . ' = ' . $this->model() . '::all();';
             }
+        } elseif ($this->operation() === 'user.all') {
+            if (is_null($this->model())) {
+                return '$' . Str::lower(Str::plural($model)) . ' = auth()->user()->' . Str::lower(Str::plural($model)) . '();';
+            } else {
+                return '$' . Str::lower($this->clauses()[0]) . ' = auth()->user()->' . Str::lower(Str::plural($this->model())) . '();';
+            }
         }
+
 
         $methods = [];
         foreach ($this->clauses as $clause) {

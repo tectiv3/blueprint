@@ -27,7 +27,7 @@ class ControllerLexer implements Lexer
         }
 
         foreach ($tokens['controllers'] as $name => $definition) {
-            $controller = new Controller($name);
+            $controller = new Controller($name, $this->isAPI($definition));
 
             if ($this->isResource($definition)) {
                 $backup = $definition;
@@ -54,8 +54,14 @@ class ControllerLexer implements Lexer
         return isset($definition['resource']) && is_string($definition['resource']);
     }
 
-    private function generateResourceTokens(Controller $controller, array $methods)
+    private function isAPI(array $definition)
     {
+        return isset($definition['resource']) &&
+            is_string($definition['resource']) &&
+            $definition['resource'] === 'api';
+    }
+
+    private function generateResourceTokens(Controller $controller, array $methods) {
         return collect($this->resourceTokens())
             ->filter(function ($statements, $method) use ($methods) {
                 return in_array($method, $methods);
