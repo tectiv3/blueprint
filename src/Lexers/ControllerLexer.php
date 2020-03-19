@@ -121,23 +121,28 @@ class ControllerLexer implements Lexer
             ],
 
             'index.api' => [
-                'query' => 'all:[plural]'
+                'query' => 'all:[plural]',
+                'resource' => '[singular] collection'
             ],
             'store.api' => [
                 'validate' => '[singular]',
-                'save' => '[singular]'
+                'save' => '[singular]',
+                'resource' => '[singular]'
             ],
             'show.api' => [
-                'authorize' => '[singular]'
+                'authorize' => '[singular]',
+                'resource' => '[singular]'
             ],
             'update.api' => [
                 'authorize' => '[singular]',
                 'validate' => '[singular]',
-                'update' => '[singular]'
+                'update' => '[singular]',
+                'resource' => 'empty'
             ],
             'destroy.api' => [
                 'authorize' => '[singular]',
-                'delete' => '[singular]'
+                'delete' => '[singular]',
+                'resource' => 'empty'
             ]
         ];
     }
