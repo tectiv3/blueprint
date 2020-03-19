@@ -93,6 +93,11 @@ class Controller
         $this->methods[$name] = $statements;
     }
 
+    public function setAPI(bool $is_api = true)
+    {
+        $this->is_api = $is_api;
+    }
+
     public function prefix()
     {
         if (Str::endsWith($this->name(), 'Controller')) {

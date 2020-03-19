@@ -40,6 +40,9 @@ class ControllerLexer implements Lexer
             }
 
             foreach ($definition as $method => $body) {
+                if (isset($body['resource'])) {
+                    $controller->setAPI();
+                }
                 $controller->addMethod($method, $this->statementLexer->analyze($body));
             }
 

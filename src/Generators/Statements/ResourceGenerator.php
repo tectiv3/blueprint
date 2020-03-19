@@ -4,13 +4,10 @@ namespace Blueprint\Generators\Statements;
 
 use Blueprint\Contracts\Generator;
 use Blueprint\Models\Controller;
-use Blueprint\Models\Statements\ResourceStatement;
 use Illuminate\Support\Str;
 
 class ResourceGenerator implements Generator
 {
-    private const INDENT = '            ';
-
     /**
      * @var \Illuminate\Contracts\Filesystem\Filesystem
      */
@@ -33,16 +30,7 @@ class ResourceGenerator implements Generator
 
         /** @var \Blueprint\Models\Controller $controller */
         foreach ($tree['controllers'] as $controller) {
-            $hasResources = false;
-            foreach ($controller->methods() as $method => $statements) {
-                foreach ($statements as $statement) {
-                    if ($statement instanceof ResourceStatement) {
-                        $hasResources = true;
-                        break 2;
-                    }
-                }
-            }
-            if (!$controller->isAPI() && !$hasResources) {
+            if (!$controller->isAPI()) {
                 continue;
             }
             $context = Str::singular($controller->prefix());
@@ -59,7 +47,7 @@ class ResourceGenerator implements Generator
 
             $this->files->put(
                 $path,
-                $this->populateStub($stub, $name, $context, $controller)
+                $this->populateStub($stub, $name, $controller)
             );
 
             $output['created'][] = $path;
@@ -80,7 +68,6 @@ class ResourceGenerator implements Generator
     protected function populateStub(
         string $stub,
         string $name,
-        $context,
         Controller $controller
     ) {
         $stub = str_replace(
