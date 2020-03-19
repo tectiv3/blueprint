@@ -263,6 +263,7 @@ class ModelGenerator implements Generator
     {
         static $php_data_types = [
             'id' => 'int',
+            'uuid' => 'string',
             'bigincrements' => 'int',
             'biginteger' => 'int',
             'boolean' => 'bool',

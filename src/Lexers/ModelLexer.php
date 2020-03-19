@@ -80,6 +80,8 @@ class ModelLexer implements Lexer
         'usecurrent' => 'useCurrent',
         'always' => 'always',
         'unique' => 'unique',
+        'index' => 'index',
+        'primary' => 'primary'
     ];
 
     public function analyze(array $tokens): array

@@ -30,7 +30,13 @@ class ControllerLexer implements Lexer
             $controller = new Controller($name);
 
             if ($this->isResource($definition)) {
-                $definition = $this->generateResourceTokens($controller, $this->methodsForResource($definition['resource']));
+                $backup = $definition;
+                $definition = $this->generateResourceTokens(
+                    $controller,
+                    $this->methodsForResource($definition['resource'])
+                );
+                unset($backup['resource']);
+                $definition = array_merge($definition, $backup);
             }
 
             foreach ($definition as $method => $body) {
@@ -54,9 +60,11 @@ class ControllerLexer implements Lexer
             ->filter(function ($statements, $method) use ($methods) {
                 return in_array($method, $methods);
             })
-            ->map(function ($statements) use ($controller) {
-                return collect($statements)
-                    ->map(function ($statement) use ($controller) {
+            ->mapWithKeys(function ($statements, $method) use ($controller) {
+                return [
+                    str_replace('.api', '', $method) => collect(
+                        $statements
+                    )->map(function ($statement) use ($controller) {
                         $model = Str::singular($controller->prefix());
 
                         return str_replace(
@@ -64,7 +72,8 @@ class ControllerLexer implements Lexer
                             [Str::lower($model), Str::lower(Str::plural($model))],
                             $statement
                         );
-                    });
+                    })
+                ];
             })
             ->toArray();
     }
@@ -100,6 +109,26 @@ class ControllerLexer implements Lexer
             'destroy' => [
                 'delete' => '[singular]',
                 'redirect' => '[singular].index'
+            ],
+
+            'index.api' => [
+                'query' => 'all:[plural]'
+            ],
+            'store.api' => [
+                'validate' => '[singular]',
+                'save' => '[singular]'
+            ],
+            'show.api' => [
+                'authorize' => '[singular]'
+            ],
+            'update.api' => [
+                'authorize' => '[singular]',
+                'validate' => '[singular]',
+                'update' => '[singular]'
+            ],
+            'destroy.api' => [
+                'authorize' => '[singular]',
+                'delete' => '[singular]'
             ]
         ];
     }
@@ -107,7 +136,13 @@ class ControllerLexer implements Lexer
     private function methodsForResource(string $type)
     {
         if ($type === 'api') {
-            return ['index', 'store', 'show', 'update', 'destroy'];
+            return [
+                'index.api',
+                'store.api',
+                'show.api',
+                'update.api',
+                'destroy.api'
+            ];
         }
 
         if ($type === 'all') {

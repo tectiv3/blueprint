@@ -13,6 +13,7 @@ use Blueprint\Models\Statements\RenderStatement;
 use Blueprint\Models\Statements\SendStatement;
 use Blueprint\Models\Statements\SessionStatement;
 use Blueprint\Models\Statements\ValidateStatement;
+use Blueprint\Models\Statements\AuthorizeStatement;
 use Illuminate\Support\Str;
 
 class StatementLexer implements Lexer
@@ -43,6 +44,9 @@ class StatementLexer implements Lexer
                     break;
                 case 'redirect':
                     $statements[] = $this->analyzeRedirect($statement);
+                    break;
+                case 'authorize':
+                    $statements[] = new AuthorizeStatement($statement);
                     break;
                 case 'save':
                 case 'update':

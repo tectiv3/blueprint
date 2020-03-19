@@ -65,7 +65,12 @@ class MigrationGenerator implements Generator
                 continue;
             }
 
-            $definition .= self::INDENT . '$table->' . $dataType . "('{$column->name()}'";
+            if ($column->dataType() === 'uuid') {
+                $dataType = 'uuid';
+            }
+
+            $definition .=
+                self::INDENT . '$table->' . $dataType . "('{$column->name()}'";
 
             if (!empty($column->attributes()) && $column->dataType() !== 'id') {
                 $definition .= ', ';

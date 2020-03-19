@@ -14,6 +14,7 @@ use Blueprint\Models\Statements\RenderStatement;
 use Blueprint\Models\Statements\SendStatement;
 use Blueprint\Models\Statements\SessionStatement;
 use Blueprint\Models\Statements\ValidateStatement;
+use Blueprint\Models\Statements\AuthorizeStatement;
 use Illuminate\Support\Str;
 
 class ControllerGenerator implements Generator
@@ -111,6 +112,8 @@ class ControllerGenerator implements Generator
                     $body .= self::INDENT . $statement->output() . PHP_EOL;
                 } elseif ($statement instanceof RedirectStatement) {
                     $body .= self::INDENT . $statement->output() . PHP_EOL;
+                } elseif ($statement instanceof AuthorizeStatement) {
+                    $body .= self::INDENT . $statement->output($name) . PHP_EOL;
                 } elseif ($statement instanceof SessionStatement) {
                     $body .= self::INDENT . $statement->output() . PHP_EOL;
                 } elseif ($statement instanceof EloquentStatement) {
