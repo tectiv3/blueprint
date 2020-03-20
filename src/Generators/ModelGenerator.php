@@ -7,6 +7,7 @@ use Blueprint\Contracts\Generator;
 use Blueprint\Models\Column;
 use Blueprint\Models\Model;
 use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 
 class ModelGenerator implements Generator
 {
@@ -114,7 +115,8 @@ class ModelGenerator implements Generator
     private function buildBelongsTo(Model $model)
     {
         $columns = array_filter($model->columns(), function (Column $column) {
-            return $column->name() !== 'id' && $column->dataType() === 'id';
+            return $column->name() !== 'id' &&
+                in_array($column->dataType(), ['id', 'uuid']);
         });
 
         if (empty($columns)) {
@@ -154,20 +156,22 @@ class ModelGenerator implements Generator
 
         /** @var Column $column */
         foreach ($columns as $column) {
-            foreach ($column->attributes() as $methodName => $modelName) {
+            foreach ($column->attributes() as $methodName => $value) {
                 if ('belongsTo' === $methodName) {
-                    throw new \Exception('The belongsTo relationship for the '.$modelName.' model on the '.$model->name().' model should be defined using the '.$modelName.'_id: id syntax');
+                    throw new \Exception('The belongsTo relationship for the '.$value.' model on the '.$model->name().' model should be defined using the '.$value.'_id: id syntax');
                 }
-                $class = Str::studly($column->attributes()[0] ?? $modelName);
-                $relationship = sprintf("\$this->%s(%s::class)",
-                    $methodName,
-                    '\\' . $model->fullyQualifiedNamespace() . '\\' . $class);
 
-                $modelNameForMethod = Str::contains($methodName, 'Many') ? Str::plural($modelName) : $modelName;
-                $method = str_replace('DummyName', Str::camel($modelNameForMethod), $template);
-                $method = str_replace('null', $relationship, $method);
+                $models = Arr::wrap($value);
+                foreach ($models as $modelName) {
+                    $class = Str::studly($column->attributes()[0] ?? $modelName);
+                    $relationship = sprintf("\$this->%s(%s::class)", $methodName, '\\' . $model->fullyQualifiedNamespace() . '\\' . $class);
 
-                $methods .= PHP_EOL . $method;
+                    $modelNameForMethod = Str::contains($methodName, 'Many') ? Str::plural($modelName) : $modelName;
+                    $method = str_replace('DummyName', Str::camel($modelNameForMethod), $template);
+                    $method = str_replace('null', $relationship, $method);
+
+                    $methods .= PHP_EOL . $method;
+               }
             }
         }
 
@@ -229,6 +233,10 @@ class ModelGenerator implements Generator
             }
 
             return 'decimal';
+        }
+
+        if ($column->dataType() === 'json') {
+            return 'array';
         }
 
         return null;

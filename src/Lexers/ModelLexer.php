@@ -81,7 +81,8 @@ class ModelLexer implements Lexer
         'always' => 'always',
         'unique' => 'unique',
         'index' => 'index',
-        'primary' => 'primary'
+        'primary' => 'primary',
+        'foreign' => 'foreign'
     ];
 
     public function analyze(array $tokens): array
