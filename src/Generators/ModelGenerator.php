@@ -7,7 +7,6 @@ use Blueprint\Contracts\Generator;
 use Blueprint\Models\Column;
 use Blueprint\Models\Model;
 use Illuminate\Support\Str;
-use Illuminate\Support\Arr;
 
 class ModelGenerator implements Generator
 {
@@ -47,7 +46,6 @@ class ModelGenerator implements Generator
 
         $body = $this->buildProperties($model);
         $body .= PHP_EOL . PHP_EOL;
-        $body .= $this->buildBelongsTo($model);
         $body .= $this->buildRelationships($model);
 
         $stub = str_replace('// ...', trim($body), $stub);
@@ -112,66 +110,28 @@ class ModelGenerator implements Generator
         return trim($properties);
     }
 
-    private function buildBelongsTo(Model $model)
-    {
-        $columns = array_filter($model->columns(), function (Column $column) {
-            return $column->name() !== 'id' &&
-                in_array($column->dataType(), ['id', 'uuid']);
-        });
-
-        if (empty($columns)) {
-            return '';
-        }
-
-        $methods = '';
-        $template = $this->files->stub('model/method.stub');
-
-        /** @var Column $column */
-        foreach ($columns as $column) {
-            $name = Str::beforeLast($column->name(), '_id');
-            $class = Str::studly($column->attributes()[0] ?? $name);
-            $relationship = sprintf("\$this->belongsTo(%s::class)", '\\' . $model->fullyQualifiedNamespace() . '\\' . $class);
-
-            $method = str_replace('DummyName', Str::camel($name), $template);
-            $method = str_replace('null', $relationship, $method);
-
-            $methods .= PHP_EOL . $method;
-        }
-
-        return $methods;
-    }
-
     private function buildRelationships(Model $model)
     {
-        $columns = array_filter($model->columns(), function (Column $column) {
-            return $column->name() === 'relationships';
-        });
-
-        if (empty($columns)) {
-            return '';
-        }
-
         $methods = '';
         $template = $this->files->stub('model/method.stub');
 
-        /** @var Column $column */
-        foreach ($columns as $column) {
-            foreach ($column->attributes() as $methodName => $value) {
-                if ('belongsTo' === $methodName) {
-                    throw new \Exception('The belongsTo relationship for the '.$value.' model on the '.$model->name().' model should be defined using the '.$value.'_id: id syntax');
+        foreach ($model->relationships() as $type => $references) {
+            foreach ($references as $reference) {
+                if (Str::contains($reference, ':')) {
+                    [$class, $name] = explode(':', $reference);
+                } else {
+                    $name = $reference;
+                    $class = null;
                 }
 
-                $models = Arr::wrap($value);
-                foreach ($models as $modelName) {
-                    $class = Str::studly($column->attributes()[0] ?? $modelName);
-                    $relationship = sprintf("\$this->%s(%s::class)", $methodName, '\\' . $model->fullyQualifiedNamespace() . '\\' . $class);
+                $name = Str::beforeLast($name, '_id');
+                $class = Str::studly($class ?? $name);
+                $relationship = sprintf("\$this->%s(%s::class)", $type, '\\' . $model->fullyQualifiedNamespace() . '\\' . $class);
 
-                    $modelNameForMethod = Str::contains($methodName, 'Many') ? Str::plural($modelName) : $modelName;
-                    $method = str_replace('DummyName', Str::camel($modelNameForMethod), $template);
-                    $method = str_replace('null', $relationship, $method);
-
-                    $methods .= PHP_EOL . $method;
-               }
+                $method_name = $type === 'hasMany' ? Str::plural($name) : $name;
+                $method = str_replace('DummyName', Str::camel($method_name), $template);
+                $method = str_replace('null', $relationship, $method);
+                $methods .= PHP_EOL . $method;
             }
         }
 
@@ -193,7 +153,6 @@ class ModelGenerator implements Generator
             'deleted_at',
             'created_at',
             'updated_at',
-            'relationships',
         ]);
     }
 

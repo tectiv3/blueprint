@@ -8,6 +8,12 @@ use Blueprint\Models\Model;
 
 class ModelLexer implements Lexer
 {
+    private static $relationships = [
+        'belongsto' => 'belongsTo',
+        'hasone' => 'hasOne',
+        'hasmany' => 'hasMany',
+    ];
+
     private static $dataTypes = [
         'bigincrements' => 'bigIncrements',
         'biginteger' => 'bigInteger',
@@ -82,13 +88,13 @@ class ModelLexer implements Lexer
         'unique' => 'unique',
         'index' => 'index',
         'primary' => 'primary',
-        'foreign' => 'foreign'
+        'foreign' => 'foreign',
     ];
 
     public function analyze(array $tokens): array
     {
         $registry = [
-            'models' => []
+            'models' => [],
         ];
 
         if (empty($tokens['models'])) {
@@ -125,6 +131,18 @@ class ModelLexer implements Lexer
             unset($columns['softdeletestz']);
         }
 
+        if (isset($columns['relationships'])) {
+            if (is_array($columns['relationships'])) {
+                foreach ($columns['relationships'] as $type => $relationships) {
+                    foreach (explode(',', $relationships) as $reference) {
+                        $model->addRelationship(self::$relationships[strtolower($type)], trim($reference));
+                    }
+                }
+            }
+
+            unset($columns['relationships']);
+        }
+
         if (!isset($columns['id'])) {
             $column = $this->buildColumn('id', 'id');
             $model->addColumn($column);
@@ -133,6 +151,14 @@ class ModelLexer implements Lexer
         foreach ($columns as $name => $definition) {
             $column = $this->buildColumn($name, $definition);
             $model->addColumn($column);
+
+            if ($column->name() !== 'id' && in_array($column->dataType(), ['id', 'uuid'])) {
+                if ($column->attributes()) {
+                    $model->addRelationship('belongsTo', $column->attributes()[0] . ':' . $column->name());
+                } else {
+                    $model->addRelationship('belongsTo', $column->name());
+                }
+            }
         }
 
         return $model;
